@@ -445,6 +445,10 @@ public class J2SwiftListener extends Java8BaseListener
         replace( ctx, mapType(ctx));
     }
 
+    public void enterTryStatement(Java8Parser.TryStatementContext ctx) {
+        replaceFirst( ctx, Java8Lexer.TRY, "do");
+    }
+
     //
     // util
     //
