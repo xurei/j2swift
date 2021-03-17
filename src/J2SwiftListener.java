@@ -34,6 +34,8 @@ public class J2SwiftListener extends Java8BaseListener
         typeMap.put("Float", "Float");
         typeMap.put("double", "Double");
         typeMap.put("Double", "Double");
+        typeMap.put("byte", "UInt8");
+        typeMap.put("Byte", "UInt8");
         typeMap.put("int", "Int");
         typeMap.put("Integer", "Int");
         typeMap.put("long", "Int64");
