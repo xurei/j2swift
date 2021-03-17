@@ -156,11 +156,7 @@ public class J2SwiftListener extends Java8BaseListener
         rewriter.insertAfter( ctx.variableDeclaratorId().stop, " : " + getText( ctx.unannType() ) + "?" );
 
         //:	variableModifier* unannType variableDeclaratorId
-        if ( formalParameterPosition++ > 0 || inConstructor ) {
-            replace( ctx.unannType(), "_" );
-        } else {
-            removeRight( ctx.unannType() );
-        }
+        replace( ctx.unannType(), "_" );
     }
 
     @Override
