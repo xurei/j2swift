@@ -435,6 +435,12 @@ public class J2SwiftListener extends Java8BaseListener
         }
     }
 
+    public void enterClassModifier(Java8Parser.ClassModifierContext ctx) {
+        if (ctx.start.getType() == Java8Lexer.STATIC) {
+            deleteFirst( ctx, Java8Lexer.STATIC );
+        }
+    }
+
     //
     // util
     //
