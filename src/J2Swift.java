@@ -1,7 +1,9 @@
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.PrintStream;
 
 /**
  * Very basic Java to Swift syntax converter.
@@ -18,6 +20,10 @@ public class J2Swift
         if ( args.length>0 ) inputFile = args[0];
         InputStream is = System.in;
         if ( inputFile!=null ) { is = new FileInputStream(inputFile); }
+        String outputFile = null;
+        if ( args.length>1 ) { outputFile = args[1]; }
+        PrintStream os = System.out;
+        if ( outputFile!=null ) { os = new PrintStream(new FileOutputStream(outputFile)); }
         ANTLRInputStream input = new ANTLRInputStream(is);
         Java8Lexer lexer = new Java8Lexer(input);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -26,6 +32,12 @@ public class J2Swift
         ParseTreeWalker walker = new ParseTreeWalker();
         J2SwiftListener swiftListener = new J2SwiftListener(tokens);
         walker.walk(swiftListener, tree);
-        System.out.println( swiftListener.rewriter.getText() );
+
+        String preconverted = swiftListener.rewriter.getText();
+        preconverted = preconverted.replaceAll("static +final", "static");
+        os.println( preconverted );
+
+
+        os.close();
 	}
 }
