@@ -377,12 +377,23 @@ public class J2SwiftListener extends Java8BaseListener
         }
     }
 
+    @Override public void exitMethodInvocation_lfno_primary(Java8Parser.MethodInvocation_lfno_primaryContext ctx) {
+        translateMethodInvocation(ctx, ctx.argumentList());
+    }
+
     @Override
     public void exitMethodInvocation( Java8Parser.MethodInvocationContext ctx )
     {
+        translateMethodInvocation(ctx, ctx.argumentList());
+    }
+
+    private void translateMethodInvocation(ParserRuleContext ctx, Java8Parser.ArgumentListContext arguments) {
         // todo: make a map for these
         if ( ctx.getText().startsWith( "System.out.println" ) ) {
-            replace( ctx, "println(" + getText( ctx.argumentList() ) + ")" );
+            replace( ctx, "println(" + getText( arguments ) + ")" );
+        }
+        else if ( ctx.getText().startsWith( "Math.random" ) ) {
+            replace( ctx, "drand48()" );
         }
     }
 
@@ -464,39 +475,30 @@ public class J2SwiftListener extends Java8BaseListener
     }
 
     public void exitAmbiguousName(Java8Parser.AmbiguousNameContext ctx) {
-        if ("this".equals(ctx.start.getText())) {
-            System.out.println("ignored this");
-        }
-        else {
-            replace( ctx, ctx.start.getText() + "!");
-            System.out.println(ctx.start.getText());
-        }
+        translateExpression(ctx);
     }
 
     public void exitExpressionName(Java8Parser.ExpressionNameContext ctx) {
-        /*
-        List<TerminalNode> tokens = ctx.getTokens(Java8Lexer.Identifier);
-            //getTokens( token );
+        translateExpression(ctx);
+    }
 
-        for (TerminalNode token: tokens) {
-            int tokenIndex = token.getSymbol().getTokenIndex();
-            if ("this".equals(token.getText())) {
-                System.out.println("ignored this");
-            }
-            else {
-                rewriter.insertAfter();
-                rewriter.replace(tokenIndex, token.getText() + "!" );
-            }
-        }
-        */
+    public void exitTypeName(Java8Parser.TypeNameContext ctx) {
+        translateExpression(ctx);
+    }
 
-        if ("this".equals(ctx.start.getText())) {
-            System.out.println("ignored this");
+    private void translateExpression(ParserRuleContext ctx) {
+        String start = ctx.start.getText();
+        if ("this".equals(start) || start.substring(0, 1).equals(start.substring(0, 1).toUpperCase())) {
+            //System.out.println("ignored this");
         }
         else {
             rewriter.insertAfter(ctx.stop, "!");
-            //replace( ctx, ctx.getText() + "!");
-            //System.out.println(ctx.start.getText());
+        }
+    }
+
+    @Override public void enterMarkerAnnotation(Java8Parser.MarkerAnnotationContext ctx) {
+        if ("@Override".equals(ctx.getText())) {
+            replace( ctx, "override");
         }
     }
 
