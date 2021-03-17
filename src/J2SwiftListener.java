@@ -150,7 +150,7 @@ public class J2SwiftListener extends Java8BaseListener
     @Override
     public void exitFormalParameter( Java8Parser.FormalParameterContext ctx )
     {
-        rewriter.insertAfter( ctx.variableDeclaratorId().stop, " : " + getText( ctx.unannType() ) );
+        rewriter.insertAfter( ctx.variableDeclaratorId().stop, " : " + getText( ctx.unannType() ) + "?" );
 
         //:	variableModifier* unannType variableDeclaratorId
         if ( formalParameterPosition++ > 0 || inConstructor ) {
@@ -447,6 +447,58 @@ public class J2SwiftListener extends Java8BaseListener
 
     public void enterTryStatement(Java8Parser.TryStatementContext ctx) {
         replaceFirst( ctx, Java8Lexer.TRY, "do");
+    }
+
+    public void enterFieldAccess(Java8Parser.FieldAccessContext ctx) {
+        /*replaceFirst( ctx, Java8Lexer.DOT, "!.");
+        System.out.println("fieldAccess: " + ctx.getText());*/
+    }
+
+    public void enterReturnStatement(Java8Parser.ReturnStatementContext ctx) {
+        //replaceFirst( ctx, Java8Lexer.DOT, "!.");
+        //System.out.println("ok");
+    }
+
+    public void exitReturnStatement(Java8Parser.ReturnStatementContext ctx) {
+        //replaceFirst( ctx, Java8Lexer.DOT, "!.");
+        //System.out.println("ok");
+    }
+
+    public void exitAmbiguousName(Java8Parser.AmbiguousNameContext ctx) {
+        if ("this".equals(ctx.start.getText())) {
+            System.out.println("ignored this");
+        }
+        else {
+            replace( ctx, ctx.start.getText() + "!");
+            System.out.println(ctx.start.getText());
+        }
+    }
+
+    public void exitExpressionName(Java8Parser.ExpressionNameContext ctx) {
+        /*
+        List<TerminalNode> tokens = ctx.getTokens(Java8Lexer.Identifier);
+            //getTokens( token );
+
+        for (TerminalNode token: tokens) {
+            int tokenIndex = token.getSymbol().getTokenIndex();
+            if ("this".equals(token.getText())) {
+                System.out.println("ignored this");
+            }
+            else {
+                rewriter.insertAfter();
+                rewriter.replace(tokenIndex, token.getText() + "!" );
+            }
+        }
+        */
+
+        if ("this".equals(ctx.start.getText())) {
+            System.out.println("ignored this");
+        }
+        else {
+            rewriter.insertAfter(ctx.stop, "!");
+            //replace( ctx, ctx.getText() + "!");
+            //System.out.println(ctx.start.getText());
+        }
     }
 
     //
