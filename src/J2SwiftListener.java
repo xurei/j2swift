@@ -441,6 +441,10 @@ public class J2SwiftListener extends Java8BaseListener
         }
     }
 
+    public void enterClassOrInterfaceType(Java8Parser.ClassOrInterfaceTypeContext ctx) {
+        replace( ctx, mapType(ctx));
+    }
+
     //
     // util
     //
