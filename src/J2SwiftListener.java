@@ -98,7 +98,7 @@ public class J2SwiftListener extends Java8BaseListener
         // Use the rewritten text, not the original.
         // todo: not sure what's up here, crashing on lambdas
         try {
-            rewriter.insertAfter( ctx.variableDeclaratorId().stop, " : " + getText( unannType ) );
+            rewriter.insertAfter( ctx.variableDeclaratorId().stop, " : " + getText( unannType ) + "?" );
         } catch ( Exception e ) {
             // do nothing
         }
@@ -166,7 +166,7 @@ public class J2SwiftListener extends Java8BaseListener
         //:	result methodDeclarator throws_?
         //|	typeParameters annotation* result methodDeclarator throws_?
         if ( !ctx.result().getText().equals( "void" )) {
-            rewriter.insertAfter( ctx.methodDeclarator().stop, " -> " + getText( ctx.result() ) );
+            rewriter.insertAfter( ctx.methodDeclarator().stop, " -> " + getText( ctx.result() ) + "?" );
         }
         replace( ctx.result(), "func" );
     }
