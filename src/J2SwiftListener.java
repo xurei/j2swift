@@ -45,6 +45,7 @@ public class J2SwiftListener extends Java8BaseListener
         typeMap.put("HashMap", "Dictionary");
         typeMap.put("List", "Array");
         typeMap.put("ArrayList", "Array");
+        typeMap.put("LinkedList", "Array");
     }
 
     // Some basic modifier mappings (others in context)
