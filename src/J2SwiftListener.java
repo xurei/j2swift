@@ -185,10 +185,6 @@ public class J2SwiftListener extends Java8BaseListener
         // changed in 1.2
         //if ( ctx.getText().equals( "static" )) { replace( ctx, "class" ); }
     }
-    @Override
-    public void enterMethodModifier( Java8Parser.MethodModifierContext ctx ) {
-        if ( ctx.getText().equals( "static" )) { replace( ctx, "class" ); }
-    }
 
     @Override
     public void enterLiteral( Java8Parser.LiteralContext ctx )
@@ -499,6 +495,12 @@ public class J2SwiftListener extends Java8BaseListener
     @Override public void enterMarkerAnnotation(Java8Parser.MarkerAnnotationContext ctx) {
         if ("@Override".equals(ctx.getText())) {
             replace( ctx, "override");
+        }
+    }
+
+    @Override public void enterVariableModifier(Java8Parser.VariableModifierContext ctx) {
+        if ("final".equals(ctx.getText())) {
+            deleteFirst(ctx, Java8Lexer.FINAL);
         }
     }
 
