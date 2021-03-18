@@ -1,6 +1,7 @@
 
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.Interval;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.HashMap;
@@ -248,6 +249,10 @@ public class J2SwiftListener extends Java8BaseListener
         //    |	'(' referenceType additionalBound* ')' unaryExpressionNotPlusMinus
         //    |	'(' referenceType additionalBound* ')' lambdaExpression
         if ( ctx.primitiveType() != null ) {
+            rewriter.delete( terminalToken(ctx.children.get(0)) );
+            rewriter.delete( terminalToken(ctx.children.get(2)) );
+            rewriter.insertBefore( toContext(ctx.children.get(3)).start, "(" );
+            rewriter.insertAfter( toContext(ctx.children.get(3)).stop, ")" );
             replace( ctx.primitiveType(), mapType( ctx.primitiveType() ) );
         }
     }
@@ -350,15 +355,24 @@ public class J2SwiftListener extends Java8BaseListener
     }
 
     @Override
-    public void exitBasicForStatement( Java8Parser.BasicForStatementContext ctx )
+    public void enterBasicForStatement( Java8Parser.BasicForStatementContext ctx )
     {
         //:	'for' '(' forInit? ';' expression? ';' forUpdate? ')' statement
-        deleteFirst( ctx, Java8Lexer.RPAREN );
-        replaceFirst( ctx, Java8Lexer.LPAREN, " " ); // todo: should check spacing here
-        if ( !ctx.statement().start.getText().equals( "{" ) ) {
-            rewriter.insertBefore( ctx.statement().start, "{ " );
-            rewriter.insertAfter( ctx.statement().stop, " }" );
-        }
+
+        //C-style for are not available in Swift 4+; instead, convert to a while statement
+
+        ParserRuleContext subctx = (ParserRuleContext) ctx.children.get(8);
+        subctx = (ParserRuleContext) subctx.children.get(0);
+        subctx = (ParserRuleContext) subctx.children.get(0);
+        subctx = (ParserRuleContext) subctx.children.get(1);
+
+        Java8Parser.ForUpdateContext updateCtx = ctx.forUpdate();
+        //subctx.children.addAll(updateCtx.children);
+
+        //rewriter.delete(updateCtx.start, updateCtx.stop);
+        rewriter.delete(terminalToken(ctx.children.get(0)), terminalToken(ctx.children.get(1)));
+        rewriter.insertBefore( ((Java8Parser.ExpressionContext) ctx.children.get(4)).start, "|||while (|||" );
+        rewriter.replace( terminalToken(ctx.children.get(5)), "|||)|||" );
     }
 
     @Override
@@ -391,6 +405,17 @@ public class J2SwiftListener extends Java8BaseListener
         else if ( ctx.getText().startsWith( "Math.random" ) ) {
             replace( ctx, "drand48()" );
         }
+        else if ( ctx.getText().startsWith( "Integer.toString" ) ) {
+            // Integer.toString( => String(
+            rewriter.delete(toContext(ctx.children.get(0)).start, terminalToken(ctx.children.get(2)));
+            rewriter.insertBefore( terminalToken(ctx.children.get(3)), "String" );
+
+            // Radix argument
+            if (arguments.expression().size() > 1) {
+                rewriter.insertBefore(toContext(arguments.children.get(2)).start, "radix: ");
+                //replace( ctx, "String(" + getText( arguments.expression(0) ) + ", radix: " + getText( arguments.expression(1) ) + ")" );
+            }
+        }
     }
 
     @Override
@@ -403,8 +428,8 @@ public class J2SwiftListener extends Java8BaseListener
         }
         String st = getText( ctx.statement() );
 
-        String out = "for "+getText(ctx.variableDeclaratorId())+" : "+getText( ctx.unannType() )
-                +" in "+getText( ctx.expression() ) + " " +st;
+        String out = "for "+getText(ctx.variableDeclaratorId())+" : "+getText( ctx.unannType() )+"?"
+                +" in "+getText( ctx.expression() ) + "! " +st;
 
         replace( ctx, out );
 
@@ -504,6 +529,11 @@ public class J2SwiftListener extends Java8BaseListener
         }
     }
 
+    @Override public void exitArrayCreationExpression(Java8Parser.ArrayCreationExpressionContext ctx) {
+        rewriter.delete(ctx.start, ctx.stop);
+        rewriter.insertBefore(ctx.start, "[]");
+    }
+
     //
     // util
     //
@@ -560,6 +590,14 @@ public class J2SwiftListener extends Java8BaseListener
     {
         String mapText = modifierMap.get( text );
         return mapText == null ? text : mapText;
+    }
+
+    private Token terminalToken(ParseTree tree) {
+        return ((TerminalNode) tree).getSymbol();
+    }
+
+    private ParserRuleContext toContext(ParseTree tree) {
+        return ((ParserRuleContext) tree);
     }
 }
 
