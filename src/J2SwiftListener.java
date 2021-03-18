@@ -115,9 +115,9 @@ public class J2SwiftListener extends Java8BaseListener
         // Search children of constructorBody for any explicit constructor invocations
         List<Java8Parser.ExplicitConstructorInvocationContext> eci =
                 ctx.constructorBody().getRuleContexts( Java8Parser.ExplicitConstructorInvocationContext.class );
-        if ( !eci.isEmpty() ) {
+        /*if ( !eci.isEmpty() ) {
             rewriter.insertBefore( ctx.constructorDeclarator().start, "convenience " );
-        }
+        }*/
     }
 
     @Override
@@ -308,7 +308,12 @@ public class J2SwiftListener extends Java8BaseListener
         //    |	primary '.' typeArguments? 'super' '(' argumentList? ')' ';'
         List<TerminalNode> thisTokens = ctx.getTokens( Java8Lexer.THIS );
         if ( thisTokens != null && !thisTokens.isEmpty() ) {
-            rewriter.replace( thisTokens.get( 0 ).getSymbol().getTokenIndex(), "self.init" );
+            rewriter.replace( thisTokens.get( 0 ).getSymbol(), "self.init" );
+        }
+
+        List<TerminalNode> superTokens = ctx.getTokens( Java8Lexer.SUPER );
+        if ( superTokens != null && !superTokens.isEmpty() ) {
+            rewriter.replace( superTokens.get( 0 ).getSymbol(), "super.init" );
         }
 
     }
