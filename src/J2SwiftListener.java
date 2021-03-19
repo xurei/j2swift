@@ -46,6 +46,7 @@ public class J2SwiftListener extends Java8BaseListener
         typeMap.put("Map", "Dictionary");
         typeMap.put("HashSet", "Set");
         typeMap.put("HashMap", "Dictionary");
+        typeMap.put("TreeMap", "Dictionary");
         typeMap.put("List", "Array");
         typeMap.put("ArrayList", "Array");
         typeMap.put("LinkedList", "Array");
@@ -171,6 +172,10 @@ public class J2SwiftListener extends Java8BaseListener
         replace( ctx.result(), "func" );
     }
 
+    @Override public void exitThrows_(Java8Parser.Throws_Context ctx) {
+        replace( ctx, "throws" );
+    }
+
     @Override
     public void enterPackageDeclaration( Java8Parser.PackageDeclarationContext ctx ) {
         rewriter.insertBefore( ctx.start, "// " );
@@ -212,34 +217,52 @@ public class J2SwiftListener extends Java8BaseListener
     @Override
     public void exitClassInstanceCreationExpression( Java8Parser.ClassInstanceCreationExpressionContext ctx )
     {
-        //:	'new' typeArguments? annotation* Identifier ('.' annotation* Identifier)* typeArgumentsOrDiamond? '(' argumentList? ')' classBody?
-        //|	expressionName '.' 'new' typeArguments? annotation* Identifier typeArgumentsOrDiamond? '(' argumentList? ')' classBody?
-        //|	primary '.' 'new' typeArguments? annotation* Identifier typeArgumentsOrDiamond? '(' argumentList? ')' classBody?
-        if ( ctx.start.getText().equals( "new" ) ) {
-            replaceFirst( ctx, Java8Lexer.Identifier, mapType(ctx.Identifier().get(0).getText()) );
-            rewriter.delete( ctx.start );
-            rewriter.delete( ctx.start.getTokenIndex() + 1 ); // space
-        }
+        translateClassInstanceCreation(ctx, ctx.Identifier(), ctx.classBody());
     }
 
     @Override
     public void enterClassInstanceCreationExpression_lfno_primary( Java8Parser.ClassInstanceCreationExpression_lfno_primaryContext ctx )
     {
+        translateClassInstanceCreation(ctx, ctx.Identifier(), ctx.classBody());
+    }
+
+    private void translateClassInstanceCreation(ParserRuleContext ctx, List<TerminalNode> identifier, Java8Parser.ClassBodyContext classBody) {
         //:	'new' typeArguments? annotation* Identifier ('.' annotation* Identifier)* typeArgumentsOrDiamond? '(' argumentList? ')' classBody?
         //|	expressionName '.' 'new' typeArguments? annotation* Identifier typeArgumentsOrDiamond? '(' argumentList? ')' classBody?
         if ( ctx.start.getText().equals( "new" ) ) {
-            replaceFirst( ctx, Java8Lexer.Identifier, mapType(ctx.Identifier().get(0).getText()) );
-            rewriter.delete( ctx.start );
-            rewriter.delete( ctx.start.getTokenIndex() + 1 ); // space
+            rewriter.delete(ctx.start);
+            if (classBody != null) {
+                String extendedClass = "Extended" + translateIdentifier(identifier);
+                // Inline extended class
+                rewriter.insertBefore(ctx.start, "{\n    class Extended : ");
+                rewriter.insertAfter(ctx.stop, "\n    return Extended(); \n    }()");
+                System.out.println("inline");
+                rewriter.delete( terminalToken(ctx.children.get(ctx.children.size() - 3)), terminalToken(ctx.children.get(ctx.children.size() - 2)) );
+            }
+            //replaceFirst( ctx, Java8Lexer.Identifier, translateIdentifier(identifier));
         }
+    }
+
+    private String translateIdentifier(List<TerminalNode> identifier) {
+        StringBuilder sb = new StringBuilder();
+        for (TerminalNode subId : identifier) {
+            if (subId.getSymbol().getTokenIndex() != Java8Lexer.DOT) {
+                sb.append(mapType(subId.getText())).append('.');
+            }
+            else {
+                sb.append(subId.getText());
+            }
+        }
+        sb.delete(sb.length()-1, sb.length());
+        return sb.toString();
     }
 
     @Override
     public void enterThrowStatement( Java8Parser.ThrowStatementContext ctx )
     {
         //:	'throw' expression ';'
-        rewriter.insertBefore( ctx.start, "throwException() /* " );
-        rewriter.insertAfter( ctx.stop, " */" );
+        //rewriter.insertBefore( ctx.start, "throwException() /* " );
+        //rewriter.insertAfter( ctx.stop, " */" );
     }
 
     @Override
